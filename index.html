@@ -1,0 +1,116 @@
+<!Doctype html>
+<html>
+    <head>
+        <title>
+        Finanzplaner
+         </title> 
+    </head>
+    <style>
+        body {
+            text-align: center;
+            background-color: lightblue;
+            font-family: sans-serif;
+        }
+        button {
+            background-color: white;
+            color: black;
+            padding: 8px 15px;
+            border: 1px solid gray;
+            border-radius: 4px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        input {
+            padding: 6px;
+            margin-top: 4px;
+            border: 1px solid gray;
+            border-radius: 4px;
+        } 
+        .nav-bar {
+            background-color: #34495e;
+            padding: 10px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+        .nav-bar a:hover {
+            text-decoration: underline;
+        }
+    </style>    
+    <body>
+        <div class="nav-bar">
+            <a href="index.html">Login</a>
+            <a href="Registrirung.html">Registrieren</a>
+            <a href="Übersicht.html">Übersicht</a>
+        </div>
+        <h1>
+        Mein Finanzplaner
+        </h1>
+        <h2>
+        Das Geld immer im Blick.
+        </h2>
+        <form id="loginForm">
+            <label for="username">Benutzername</label>
+            <br>
+            <input type="text" name="username" id="username" placeholder="username">
+            <br>
+            <label for="E-Mail">E-Mail Adresse</label>
+            <br>
+            <input type="email" name="E-Mail" id="E-Mail" placeholder="E-Mail">
+            <br>
+            <label for="password">Passwort</label>
+            <br>
+            <input type="password" name="password" id="password" placeholder="password">
+            <br>
+            <button type="submit">Anmelden</button>
+                    
+            <a href="Registrirung.html" style="display: block; text-align: center; margin-top: 15px; color: #3498db; text-decoration: none; font-weight: bold;">
+                        Neuen Nutzer erstellen
+            </a>
+        </form> 
+        <script>
+           document.getElementById('loginForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                let eingegebenerNutzer = document.getElementById('username').value;
+                let eingegebeneEmail = document.getElementById('E-Mail').value;
+                let eingegebenesPasswort = document.getElementById('password').value;
+
+                let gespeicherterNutzer = localStorage.getItem('registrierterNutzer');
+                let gespeicherteEmail = localStorage.getItem('registrierteEmail');
+                let gespeichertesPasswort = localStorage.getItem('registriertesPasswort');
+
+                if (!gespeicherterNutzer) {
+                    alert('Es existiert noch kein Konto. Bitte registriere dich zuerst!');
+                    return;
+                }
+
+                if (eingegebenerNutzer === gespeicherterNutzer && 
+                    eingegebeneEmail === gespeicherteEmail && 
+                    eingegebenesPasswort === gespeichertesPasswort) {
+                    
+                    let zufallsCode = Math.floor(1000 + Math.random() * 9000);
+                    alert('LOGIN SCHRITT 1 ERFOLGREICH!\n\nEinmalcode wurde an deine E-Mail versendet.\nDein Code lautet: ' + zufallsCode);
+
+                    let eingegebenerCode = prompt('Bitte gib den 4-stelligen Einmalcode ein, den du erhalten hast:');
+
+                    if (parseInt(eingegebenerCode) === zufallsCode) {
+                        sessionStorage.setItem('istEingeloggt', 'true');
+                        alert('Einmalcode korrekt! Willkommen zurück.');
+                        window.location.href = 'Übersicht.html'; 
+                    } else {
+                        alert('Fehler: Falscher Einmalcode! Zugriff verweigert.');
+                    }
+
+                } else {
+                    alert('Fehler: Die Login-Daten stimmen nicht überein!');
+                }
+            });
+        </script>
+    </body>
+</html>    

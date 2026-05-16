@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mein Finanzplaner - Übersicht</title>
+    <style>
+        body {
+            text-align: center;
+            background-color: lightblue;
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .nav-bar {
+            background-color: #34495e;
+            padding: 10px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+        .nav-bar a:hover {
+            text-decoration: underline;
+        }
+        .monats-wahrler {
+            margin-bottom: 20px;
+        }
+        .monats-wahrler select {
+            display: inline-block;
+            width: auto;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 5px 10px;
+        }
+        .eingabe-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            text-align: left;
+            margin-bottom: 30px;
+        }
+        input, select {
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid gray;
+            border-radius: 4px;
+            display: block;
+            width: 220px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 15px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .kontostand-box {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background-color: white;
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 4px;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+        }
+        table {
+            margin: 0 auto;
+            background-color: white;
+            border-collapse: collapse;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        .plus {
+            color: green;
+            font-weight: bold;
+        }
+        .minus {
+            color: red;
+            font-weight: bold;
+        }
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+            font-size: 12px;
+        }
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <a href="index.html">Login</a>
+        <a href="Registrirung.html">Registrieren</a>
+        <a href="Übersicht.html">Übersicht</a>
+    </div>
+
+    <h1>Einnahmen & Ausgaben</h1>
+
+    <div class="monats-wahrler">
+        <label for="anzeigeMonat"><strong>Aktueller Monat:</strong></label>
+        <select id="anzeigeMonat" onchange="rendereTabelle()">
+            <option value="Januar">Januar</option>
+            <option value="Februar">Februar</option>
+            <option value="März">März</option>
+            <option value="April">April</option>
+            <option value="Mai">Mai</option>
+            <option value="Juni">Juni</option>
+            <option value="Juli">Juli</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="Oktober">Oktober</option>
+            <option value="November">November</option>
+            <option value="Dezember">Dezember</option>
+        </select>
+    </div>
+    
+    <div class="kontostand-box">
+        Monatsbudget: <span id="gesamtBudget">0.00</span> €
+    </div>
+    <br>
+
+    <div class="eingabe-box">
+        <label for="typ">Art der Buchung:</label>
+        <select id="typ">
+            <option value="einnahme">Einnahme (+)</option>
+            <option value="ausgabe">Ausgabe (-)</option>
+        </select>
+
+        <label for="beschreibung">Beschreibung:</label>
+        <input type="text" id="beschreibung" placeholder="z.B. Gehalt, Miete, Einkauf">
+
+        <label for="betrag">Betrag in Euro:</label>
+        <input type="number" id="betrag" step="0.01" placeholder="0.00">
+        
+        <button type="button" onclick="speichereEintrag()">Eintrag speichern</button>
+    </div>
+
+    <h2>Deine Buchungshistorie</h2>
+    <table id="finanzTabelle">
+        <thead>
+            <tr>
+                <th>Beschreibung</th>
+                <th>Typ</th>
+                <th>Betrag</th>
+                <th>Aktion</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        if (sessionStorage.getItem('istEingeloggt') !== 'true') {
+            alert('Zugriff verweigert! Bitte melde dich zuerst an.');
+            window.location.href = 'index.html';
+        }
+
+        // Hier lagern alle Buchungen als Liste auf deinem PC
+        let alleBuchungen = [];
+
+        function speichereEintrag() {
+            let monat = document.getElementById('anzeigeMonat').value;
+            let typ = document.getElementById('typ').value;
+            let beschreibung = document.getElementById('beschreibung').value;
+            let betragInput = document.getElementById('betrag').value;
+            let betrag = parseFloat(betragInput);
+
+            if (!beschreibung) {
+                alert('Bitte gib eine Beschreibung ein.');
+                return;
+            }
+
+            if (isNaN(betrag) || betrag <= 0) {
+                alert('Bitte gib einen gültigen Betrag ein.');
+                return;
+            }
+
+            // Neues Buchungs-Objekt erstellen
+            let neueBuchung = {
+                id: Date.now(), // Einzigartige Nummer zum Löschen
+                monat: monat,
+                typ: typ,
+                beschreibung: beschreibung,
+                betrag: betrag
+            };
+
+            // In die Liste abspeichern
+            alleBuchungen.push(neueBuchung);
+
+            // Eingabefelder leeren
+            document.getElementById('beschreibung').value = "";
+            document.getElementById('betrag').value = "";
+
+            // Tabelle und Budget neu zeichnen
+            rendereTabelle();
+        }
+
+        function loescheEintrag(id) {
+            // Filtert den ausgewählten Eintrag aus der Liste heraus
+            alleBuchungen = alleBuchungen.filter(buchung => buchung.id !== id);
+            // Tabelle und Budget neu zeichnen
+            rendereTabelle();
+        }
+
+        function rendereTabelle() {
+            let aktiverMonat = document.getElementById('anzeigeMonat').value;
+            let tbody = document.getElementById('finanzTabelle').getElementsByTagName('tbody')[0];
+            
+            // Tabelle leeren, bevor wir neu zeichnen
+            tbody.innerHTML = "";
+            
+            let monatsBudget = 0.00;
+
+            // Gehe alle Buchungen durch
+            for (let i = 0; i < alleBuchungen.length; i++) {
+                let b = alleBuchungen[i];
+
+                // Zeige nur Buchungen an, die zum ausgewählten Monat passen
+                if (b.monat === aktiverMonat) {
+                    let neueZeile = tbody.insertRow();
+
+                    let zelleBeschreibung = neueZeile.insertCell(0);
+                    let zelleTyp = neueZeile.insertCell(1);
+                    let zelleBetrag = neueZeile.insertCell(2);
+                    let zelleAktion = neueZeile.insertCell(3);
+
+                    zelleBeschreibung.innerText = b.beschreibung;
+
+                    if (b.typ === "einnahme") {
+                        zelleTyp.innerText = "Einnahme";
+                        zelleBetrag.innerText = "+ " + b.betrag.toFixed(2) + " €";
+                        zelleBetrag.className = "plus";
+                        monatsBudget = monatsBudget + b.betrag;
+                    } else {
+                        zelleTyp.innerText = "Ausgabe";
+                        zelleBetrag.innerText = "- " + b.betrag.toFixed(2) + " €";
+                        zelleBetrag.className = "minus";
+                        monatsBudget = monatsBudget - b.betrag;
+                    }
+
+                    // Den Löschen-Button für diese Zeile erstellen
+                    zelleAktion.innerHTML = '<button class="btn-delete" onclick="loescheEintrag(' + b.id + ')">Löschen</button>';
+                }
+            }
+
+            // Budget-Anzeige aktualisieren
+            document.getElementById('gesamtBudget').innerText = monatsBudget.toFixed(2);
+        }
+    </script>
+
+</body>
+</html>
