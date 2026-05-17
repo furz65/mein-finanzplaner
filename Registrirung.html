@@ -85,20 +85,37 @@
         
     </form>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getAuth, createUserWithEmailAndPassword } from "https://gstatic.com";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDAaN0YFzedBQF0eZaEfgQXa9CKVOAFdzc",
+            authDomain: "://firebaseapp.com",
+            projectId: "mein-finanzplaner",
+            storageBucket: "://appspot.com",
+            messagingSenderId: "867180240499",
+            appId: "1:867180240499:web:043ac6f4654a2a7b465406",
+            measurementId: "G-S2DCRB5TPJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
         document.getElementById('registerForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
-            let nutzername = document.getElementById('new-username').value;
             let email = document.getElementById('new-email').value;
             let passwort = document.getElementById('new-password').value;
 
-            localStorage.setItem('registrierterNutzer', nutzername);
-            localStorage.setItem('registrierteEmail', email);
-            localStorage.setItem('registriertesPasswort', passwort);
-
-            alert('Konto erfolgreich erstellt! Du wirst jetzt zum Login weitergeleitet.');
-            window.location.href = 'index.html';
+            createUserWithEmailAndPassword(auth, email, passwort)
+                .then((userCredential) => {
+                    alert('Konto erfolgreich erstellt! Du wirst jetzt zum Login weitergeleitet.');
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    alert('Fehler bei der Registrierung: ' + error.message);
+                });
         });
     </script>
 
