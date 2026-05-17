@@ -98,6 +98,8 @@
         
     </form>
 
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://gstatic.com";
         import { getAuth, signInWithEmailAndPassword } from "https://gstatic.com";
@@ -115,6 +117,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
+        emailjs.init({
+            publicKey: "IHR_PUBLIC_KEY",
+        });
+
         document.getElementById('loginForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
@@ -124,17 +130,28 @@
             signInWithEmailAndPassword(auth, email, passwort)
                 .then((userCredential) => {
                     let zufallsCode = Math.floor(1000 + Math.random() * 9000);
-                    alert('LOGIN SCHRITT 1 ERFOLGREICH!\n\nEinmalcode wurde an deine E-Mail versendet.\nDein Code lautet: ' + zufallsCode);
 
-                    let eingegebenerCode = prompt('Bitte gib den 4-stelligen Einmalcode ein, den du erhalten hast:');
+                    let templateParams = {
+                        to_email: email,
+                        code: zufallsCode
+                    };
 
-                    if (parseInt(eingegebenerCode) === zufallsCode) {
-                        sessionStorage.setItem('istEingeloggt', 'true');
-                        alert('Einmalcode korrekt! Willkommen zurück.');
-                        window.location.href = 'Übersicht.html'; 
-                    } else {
-                        alert('Fehler: Falscher Einmalcode! Zugriff verweigert.');
-                    }
+                    emailjs.send('IHRE_SERVICE_ID', 'IHRE_TEMPLATE_ID', templateParams)
+                        .then(function() {
+                            alert('Einmalcode wurde an deine E-Mail-Adresse versendet.');
+                            
+                            let eingegebenerCode = prompt('Bitte gib den 4-stelligen Einmalcode ein, den du erhalten hast:');
+
+                            if (parseInt(eingegebenerCode) === zufallsCode) {
+                                sessionStorage.setItem('istEingeloggt', 'true');
+                                alert('Einmalcode korrekt! Willkommen zurück.');
+                                window.location.href = 'Übersicht.html'; 
+                            } else {
+                                alert('Fehler: Falscher Einmalcode! Zugriff verweigert.');
+                            }
+                        }, function(error) {
+                            alert('Fehler beim E-Mail-Versand. Überprüfe deine EmailJS-Einstellungen.');
+                        });
                 })
                 .catch((error) => {
                     alert('Fehler beim Login: E-Mail oder Passwort falsch!');
