@@ -52,6 +52,18 @@
             display: block;
             width: 220px;
         }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .checkbox-container input {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
         button {
             background-color: #4CAF50;
             color: white;
@@ -75,15 +87,32 @@
             border-radius: 4px;
             box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
         }
-        table {
-            margin: 0 auto;
+        .tabellen-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .tabellen-spalte {
             background-color: white;
-            border-collapse: collapse;
-            width: 90%;
-            max-width: 700px;
             box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
             border-radius: 6px;
             overflow: hidden;
+            width: 45%;
+            min-width: 360px;
+        }
+        .tabellen-spalte h3 {
+            margin: 0;
+            padding: 15px;
+            color: white;
+        }
+        .spalte-plus h3 { background-color: #2ecc71; }
+        .spalte-minus h3 { background-color: #e74c3c; }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
         }
         th, td {
             padding: 12px;
@@ -91,30 +120,51 @@
             border-bottom: 1px solid #ddd;
         }
         th {
-            background-color: #34495e;
-            color: white;
+            background-color: #f5f5f5;
+            color: #333;
         }
-        .plus {
-            color: green;
-            font-weight: bold;
+        .plus { color: green; font-weight: bold; }
+        .minus { color: red; font-weight: bold; }
+        
+        .vorkasse-zeile {
+            background-color: #fff9db !important;
         }
-        .minus {
-            color: red;
+        .vorkasse-text {
+            font-size: 11px;
+            color: #f39c12;
             font-weight: bold;
+            display: block;
+        }
+        .edit-input {
+            width: 90%;
+            padding: 4px;
+            margin: 0;
+            border: 1px dashed #3498db;
+            background-color: #f7f9fa;
+            font-size: 14px;
         }
         .btn-delete {
-            background-color: #e74c3c;
+            background-color: #7f8c8d;
             color: white;
             border: none;
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
-            width: auto;
+            font-size: 12px;
+            margin-left: 3px;
+        }
+        .btn-delete:hover { background-color: #c0392b; }
+        
+        .btn-confirm {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
             font-size: 12px;
         }
-        .btn-delete:hover {
-            background-color: #c0392b;
-        }
+        .btn-confirm:hover { background-color: #2980b9; }
     </style>
 </head>
 <body>
@@ -163,22 +213,45 @@
         <label for="betrag">Betrag in Euro:</label>
         <input type="number" id="betrag" step="0.01" placeholder="0.00">
         
-        <button type="button" onclick="speichereEintrag()">Eintrag speichern</button>
+        <div class="checkbox-container">
+            <input type="checkbox" id="vorkasse">
+            <label for="vorkasse">In Vorkasse (Noch nicht final abgebucht)</label>
+        </div>
+        
+        <button type="button" onclick="speichereEintrag()">Eintrag Speichern</button>
     </div>
 
-    <h2>Deine Buchungshistorie</h2>
-    <table id="finanzTabelle">
-        <thead>
-            <tr>
-                <th>Beschreibung</th>
-                <th>Typ</th>
-                <th>Betrag</th>
-                <th>Aktion</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
+    <div class="tabellen-container">
+        
+        <div class="tabellen-spalte spalte-plus">
+            <h3>Einnahmen (+)</h3>
+            <table id="tabellePlus">
+                <thead>
+                    <tr>
+                        <th>Beschreibung</th>
+                        <th>Betrag</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="tabellen-spalte spalte-minus">
+            <h3>Ausgaben (-)</h3>
+            <table id="tabelleMinus">
+                <thead>
+                    <tr>
+                        <th>Beschreibung</th>
+                        <th>Betrag</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
 
     <script>
         if (sessionStorage.getItem('istEingeloggt') !== 'true') {
@@ -186,96 +259,141 @@
             window.location.href = 'index.html';
         }
 
-        // Hier lagern alle Buchungen als Liste auf deinem PC
         let alleBuchungen = [];
 
         function speichereEintrag() {
             let monat = document.getElementById('anzeigeMonat').value;
             let typ = document.getElementById('typ').value;
-            let beschreibung = document.getElementById('beschreibung').value;
-            let betragInput = document.getElementById('betrag').value;
-            let betrag = parseFloat(betragInput);
+            let beschreibungInput = document.getElementById('beschreibung').value.trim();
+            let betrag = parseFloat(document.getElementById('betrag').value);
+            let istVorkasse = document.getElementById('vorkasse').checked;
 
-            if (!beschreibung) {
+            if (!beschreibungInput) {
                 alert('Bitte gib eine Beschreibung ein.');
                 return;
             }
-
             if (isNaN(betrag) || betrag <= 0) {
                 alert('Bitte gib einen gültigen Betrag ein.');
                 return;
             }
 
-            // Neues Buchungs-Objekt erstellen
-            let neueBuchung = {
-                id: Date.now(), // Einzigartige Nummer zum Löschen
-                monat: monat,
-                typ: typ,
-                beschreibung: beschreibung,
-                betrag: betrag
-            };
+            let bestehenderEintrag = null;
+            for (let i = 0; i < alleBuchungen.length; i++) {
+                if (alleBuchungen[i].monat === monat && 
+                    alleBuchungen[i].typ === typ && 
+                    alleBuchungen[i].beschreibung.toLowerCase() === beschreibungInput.toLowerCase()) {
+                    bestehenderEintrag = alleBuchungen[i];
+                    break;
+                }
+            }
 
-            // In die Liste abspeichern
-            alleBuchungen.push(neueBuchung);
+            if (bestehenderEintrag) {
+                bestehenderEintrag.betrag = betrag;
+                bestehenderEintrag.vorkasse = istVorkasse;
+            } else {
+                let neueBuchung = {
+                    id: Date.now(),
+                    monat: monat,
+                    typ: typ,
+                    beschreibung: beschreibungInput,
+                    betrag: betrag,
+                    vorkasse: istVorkasse
+                };
+                alleBuchungen.push(neueBuchung);
+            }
 
-            // Eingabefelder leeren
             document.getElementById('beschreibung').value = "";
             document.getElementById('betrag').value = "";
-
-            // Tabelle und Budget neu zeichnen
+            document.getElementById('vorkasse').checked = false;
+            
             rendereTabelle();
         }
 
         function loescheEintrag(id) {
-            // Filtert den ausgewählten Eintrag aus der Liste heraus
-            alleBuchungen = alleBuchungen.filter(buchung => buchung.id !== id);
-            // Tabelle und Budget neu zeichnen
+            alleBuchungen = alleBuchungen.filter(b => b.id !== id);
             rendereTabelle();
+        }
+
+        function verbucheEintrag(id) {
+            for (let i = 0; i < alleBuchungen.length; i++) {
+                if (alleBuchungen[i].id === id) {
+                    alleBuchungen[i].vorkasse = false;
+                    break;
+                }
+            }
+            rendereTabelle();
+        }
+
+        function aktualisiereBeschreibung(id, neuerText) {
+            for (let i = 0; i < alleBuchungen.length; i++) {
+                if (alleBuchungen[i].id === id) {
+                    alleBuchungen[i].beschreibung = neuerText;
+                    break;
+                }
+            }
+            aktualisiereBudgetAusrechnung();
+        }
+
+        function aktualisiereBudgetAusrechnung() {
+            let aktiverMonat = document.getElementById('anzeigeMonat').value;
+            let monatsBudget = 0.00;
+            for (let i = 0; i < alleBuchungen.length; i++) {
+                if (alleBuchungen[i].monat === aktiverMonat) {
+                    if (alleBuchungen[i].typ === "einnahme") {
+                        monatsBudget += alleBuchungen[i].betrag;
+                    } else {
+                        monatsBudget -= alleBuchungen[i].betrag;
+                    }
+                }
+            }
+            document.getElementById('gesamtBudget').innerText = monatsBudget.toFixed(2);
         }
 
         function rendereTabelle() {
             let aktiverMonat = document.getElementById('anzeigeMonat').value;
-            let tbody = document.getElementById('finanzTabelle').getElementsByTagName('tbody')[0];
             
-            // Tabelle leeren, bevor wir neu zeichnen
-            tbody.innerHTML = "";
+            let tbodyPlus = document.getElementById('tabellePlus').getElementsByTagName('tbody')[0];
+            let tbodyMinus = document.getElementById('tabelleMinus').getElementsByTagName('tbody')[0];
             
-            let monatsBudget = 0.00;
+            tbodyPlus.innerHTML = "";
+            tbodyMinus.innerHTML = "";
 
-            // Gehe alle Buchungen durch
             for (let i = 0; i < alleBuchungen.length; i++) {
                 let b = alleBuchungen[i];
 
-                // Zeige nur Buchungen an, die zum ausgewählten Monat passen
                 if (b.monat === aktiverMonat) {
-                    let neueZeile = tbody.insertRow();
+                    let zielTbody = (b.typ === "einnahme") ? tbodyPlus : tbodyMinus;
+                    let neueZeile = zielTbody.insertRow();
 
-                    let zelleBeschreibung = neueZeile.insertCell(0);
-                    let zelleTyp = neueZeile.insertCell(1);
-                    let zelleBetrag = neueZeile.insertCell(2);
-                    let zelleAktion = neueZeile.insertCell(3);
-
-                    zelleBeschreibung.innerText = b.beschreibung;
-
-                    if (b.typ === "einnahme") {
-                        zelleTyp.innerText = "Einnahme";
-                        zelleBetrag.innerText = "+ " + b.betrag.toFixed(2) + " €";
-                        zelleBetrag.className = "plus";
-                        monatsBudget = monatsBudget + b.betrag;
-                    } else {
-                        zelleTyp.innerText = "Ausgabe";
-                        zelleBetrag.innerText = "- " + b.betrag.toFixed(2) + " €";
-                        zelleBetrag.className = "minus";
-                        monatsBudget = monatsBudget - b.betrag;
+                    if (b.vorkasse) {
+                        neueZeile.className = "vorkasse-zeile";
                     }
 
-                    // Den Löschen-Button für diese Zeile erstellen
-                    zelleAktion.innerHTML = '<button class="btn-delete" onclick="loescheEintrag(' + b.id + ')">Löschen</button>';
+                    let zelleBeschreibung = neueZeile.insertCell(0);
+                    let zelleBetrag = neueZeile.insertCell(1);
+                    let zelleAktion = neueZeile.insertCell(2);
+
+                    let vorkasseHinweis = b.vorkasse ? '<span class="vorkasse-text">[In Vorkasse]</span>' : '';
+                    zelleBeschreibung.innerHTML = '<input type="text" class="edit-input" value="' + b.beschreibung + '" oninput="aktualisiereBeschreibung(' + b.id + ', this.value)">' + vorkasseHinweis;
+
+                    if (b.typ === "einnahme") {
+                        zelleBetrag.innerText = "+ " + b.betrag.toFixed(2) + " €";
+                        zelleBetrag.className = "plus";
+                    } else {
+                        zelleBetrag.innerText = "- " + b.betrag.toFixed(2) + " €";
+                        zelleBetrag.className = "minus";
+                    }
+
+                    let aktionsButtons = "";
+                    if (b.vorkasse) {
+                        aktionsButtons += '<button class="btn-confirm" onclick="verbucheEintrag(' + b.id + ')">Buchen</button>';
+                    }
+                    aktionsButtons += '<button class="btn-delete" onclick="loescheEintrag(' + b.id + ')">X</button>';
+                    
+                    zelleAktion.innerHTML = aktionsButtons;
                 }
             }
-
-            // Budget-Anzeige aktualisieren
-            document.getElementById('gesamtBudget').innerText = monatsBudget.toFixed(2);
+            aktualisiereBudgetAusrechnung();
         }
     </script>
 
